@@ -1,0 +1,37 @@
+# Compiled class files
+**/target/
+**/out/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.settings/
+.classpath
+.project
+.springBeans
+.sts4-cache
+
+# Log files
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node modules (前端)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Application generated files
+uploads/
+storage/
