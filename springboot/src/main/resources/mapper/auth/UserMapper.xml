@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.springboot.feature.auth.mapper.UserMapper">
+
+    <select id="selectByEmail" resultType="com.example.springboot.feature.auth.entity.User">
+        SELECT id, user_id AS userId, nickname, email, password_hash AS passwordHash, avatar, create_time AS createTime
+        FROM `user`
+        WHERE email = #{email}
+        LIMIT 1
+    </select>
+
+    <select id="selectById" resultType="com.example.springboot.feature.auth.entity.User">
+        SELECT id, user_id AS userId, nickname, email, password_hash AS passwordHash, avatar, create_time AS createTime
+        FROM `user`
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user` (user_id, nickname, email, password_hash)
+        VALUES (#{userId}, #{nickname}, #{email}, #{passwordHash})
+    </insert>
+
+</mapper>

@@ -7,10 +7,24 @@ spring:
     username: root
     password: 123456
     url: jdbc:mysql://localhost:3306/douyin_clone?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+  mail:
+    host: smtp.xindudu.online
+    port: 465
+    username: xindudu
+    password: 123456
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
 
 # mybatis
 mybatis:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath:mapper/**/*.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
@@ -20,6 +34,17 @@ minio:
   endpoint: http://localhost:9000
   access-key: minioadmin
   secret-key: minioadmin
+
+# 邮箱登录
+douyin:
+  jwt-secret: douyin-dev-secret-change-me
+  jwt-expire-days: 7
+  email-code-expire-seconds: 300
+  email-code-cooldown-seconds: 30
+  mail-from-name: 抖音精选
+  mail-from-address: Douyin@xindudu.online
+  mail-smtp-domain: xindudu.online
+  mail-dev-log: false
 
 # springdoc OpenAPI
 springdoc:

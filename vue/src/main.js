@@ -1,4 +1,5 @@
-import '@/assets/global.css'
+import '@/styles/douyin-theme.css'
+import '@/styles/global.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'

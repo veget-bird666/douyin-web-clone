@@ -26,9 +26,13 @@ public class Result {
     }
 
     public static Result success(Object data) {
+        return success(data, "success");
+    }
+
+    public static Result success(Object data, String msg) {
         Result result = new Result();
         result.setCode("200");
-        result.setMsg("success");
+        result.setMsg(msg);
         result.setData(data);
         return result;
     }
@@ -41,8 +45,12 @@ public class Result {
     }
 
     public static Result error(String msg) {
+        return error("500", msg);
+    }
+
+    public static Result error(String code, String msg) {
         Result result = new Result();
-        result.setCode("500");
+        result.setCode(code);
         result.setMsg(msg);
         return result;
     }
