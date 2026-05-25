@@ -145,25 +145,6 @@ CREATE TABLE `video` (
   `comment_count` int NOT NULL DEFAULT '0' COMMENT '评论数',
   `view_count` int NOT NULL DEFAULT '0' COMMENT '播放次数',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0-审核中，1-已发布，2-删除',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_video_id` (`video_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_status_create_time` (`status`,`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频主表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `video_file`
---
-
-DROP TABLE IF EXISTS `video_file`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `video_file` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '内部ID',
-  `video_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '关联视频ID',
   `object_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'MinIO中的视频文件名',
   `cover_object_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'MinIO中的封面文件名',
   `duration` int DEFAULT NULL COMMENT '视频时长（秒）',
@@ -171,10 +152,16 @@ CREATE TABLE `video_file` (
   `width` int DEFAULT NULL COMMENT '视频宽度',
   `height` int DEFAULT NULL COMMENT '视频高度',
   `format` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '视频格式，如mp4',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_video_id` (`video_id`),
-  KEY `idx_object_name` (`object_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频文件表';
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status_create_time` (`status`,`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频表';
+
+/* Drop video_file table - fields merged into video table */
+DROP TABLE IF EXISTS `video_file`;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

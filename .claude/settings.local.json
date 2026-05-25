@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile:*)",
+      "Bash(mvn clean:*)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(mvn spring-boot:run -e)",
+      "Bash(ls -la /d/douyin-web-clone/*.sql)",
+      "Bash(ls -la D:/douyin-web-clone/*.sql)",
+      "Bash(dir /b \"D:\\\\douyin-web-clone\\\\*.sql\")",
+      "Bash(java -jar target/springboot-0.0.1-SNAPSHOT.jar)",
+      "Bash(mvn package:*)",
+      "Bash(java -jar springboot/target/springboot-0.0.1-SNAPSHOT.jar)",
+      "Bash(java -jar \"D:\\\\douyin-web-clone\\\\springboot\\\\target\\\\springboot-0.0.1-SNAPSHOT.jar\")",
+      "Bash(java:*)",
+      "Bash(curl -s http://localhost:8080/v3/api-docs)",
+      "Bash(curl:*)",
+      "Bash(mysql:*)",
+      "Bash(mc ls:*)"
+    ]
+  }
+}

@@ -31,8 +31,9 @@ public class JwtUtil {
         this.expireMs = expireDays * 24L * 60 * 60 * 1000;
     }
 
-    public String createToken(Long userId, String email) {
+    public String createToken(Long id, String userId, String email) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("id", id);
         claims.put("userId", userId);
         claims.put("email", email);
         Date now = new Date();

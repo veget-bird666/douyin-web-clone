@@ -2,51 +2,67 @@ package com.example.springboot.feature.auth.controller;
 
 import com.example.springboot.common.Result;
 import com.example.springboot.feature.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "认证管理")
 public class AuthController {
 
     @Resource
     private AuthService authService;
 
     @PostMapping("/send-code")
-    public Result sendCode(@RequestBody Map<String, String> body) {
-        String email = body != null ? body.get("email") : null;
-        return Result.success(authService.sendCode(email), "验证码已发送，请注意查收邮箱");
+    @Operation(summary = "发送邮箱验证码")
+    public Result sendCode(@RequestBody SendCodeRequest request) {
+        return Result.success(authService.sendCode(request.getEmail()), "验证码已发送，请注意查收邮箱");
     }
 
     @PostMapping("/register")
-    public Result register(@RequestBody Map<String, String> body) {
-        if (body == null) {
-            return Result.error("400", "邮箱、密码、验证码不能为空");
-        }
-        String email = body.get("email");
-        String password = body.get("password");
-        String code = body.get("code");
-        if (email == null || password == null || code == null) {
-            return Result.error("400", "邮箱、密码、验证码不能为空");
-        }
-        return Result.success(authService.register(email, password, code), "注册成功");
+    @Operation(summary = "注册")
+    public Result register(@RequestBody RegisterRequest request) {
+        return Result.success(authService.register(request.getEmail(), request.getPassword(), request.getCode()), "注册成功");
     }
 
     @PostMapping("/login")
-    public Result login(@RequestBody Map<String, String> body) {
-        if (body == null) {
-            return Result.error("400", "邮箱和密码不能为空");
-        }
-        String email = body.get("email");
-        String password = body.get("password");
-        if (email == null || password == null) {
-            return Result.error("400", "邮箱和密码不能为空");
-        }
-        return Result.success(authService.login(email, password), "登录成功");
+    @Operation(summary = "登录")
+    public Result login(@RequestBody LoginRequest request) {
+        return Result.success(authService.login(request.getEmail(), request.getPassword()), "登录成功");
+    }
+
+    public static class SendCodeRequest {
+        private String email;
+        public SendCodeRequest() {}
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    public static class RegisterRequest {
+        private String email;
+        private String password;
+        private String code;
+        public RegisterRequest() {}
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+    }
+
+    public static class LoginRequest {
+        private String email;
+        private String password;
+        public LoginRequest() {}
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 }

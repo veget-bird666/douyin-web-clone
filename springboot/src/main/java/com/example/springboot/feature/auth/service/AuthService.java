@@ -96,6 +96,7 @@ public class AuthService {
         emailCodeStore.remove(normalized);
 
         Map<String, Object> data = new HashMap<>();
+        data.put("token", jwtUtil.createToken(user.getId(), user.getUserId(), user.getEmail()));
         data.put("id", user.getId());
         data.put("userId", user.getUserId());
         data.put("email", user.getEmail());
@@ -113,7 +114,7 @@ public class AuthService {
             throw new CustomerException("401", "账号或密码错误");
         }
 
-        String token = jwtUtil.createToken(user.getId(), user.getEmail());
+        String token = jwtUtil.createToken(user.getId(), user.getUserId(), user.getEmail());
 
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("id", user.getId());
