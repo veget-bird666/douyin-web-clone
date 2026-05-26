@@ -160,6 +160,24 @@ CREATE TABLE `video` (
   KEY `idx_status_create_time` (`status`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频表';
 
+--
+-- Table structure for table `view_record`
+--
+
+DROP TABLE IF EXISTS `view_record`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `view_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '内部ID',
+  `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户ID',
+  `video_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '视频ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '浏览时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_video` (`user_id`,`video_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_video_id` (`video_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览记录表';
+
 /* Drop video_file table - fields merged into video table */
 DROP TABLE IF EXISTS `video_file`;
 /*!40101 SET character_set_client = @saved_cs_client */;

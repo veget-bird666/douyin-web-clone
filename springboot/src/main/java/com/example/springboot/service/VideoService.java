@@ -2,7 +2,10 @@ package com.example.springboot.service;
 
 import com.example.springboot.entity.Video;
 import com.example.springboot.exception.CustomerException;
+import com.example.springboot.mapper.FavoriteRecordMapper;
+import com.example.springboot.mapper.LikeRecordMapper;
 import com.example.springboot.mapper.VideoMapper;
+import com.example.springboot.mapper.ViewRecordMapper;
 import io.minio.*;
 import io.minio.http.Method;
 import jakarta.annotation.Resource;
@@ -31,23 +34,24 @@ public class VideoService {
     private VideoMapper videoMapper;
 
     @Resource
+    private LikeRecordMapper likeRecordMapper;
+
+    @Resource
+    private FavoriteRecordMapper favoriteRecordMapper;
+
+    @Resource
+    private ViewRecordMapper viewRecordMapper;
+
+    @Resource
     private MinioClient minioClient;
 
     @Transactional(rollbackFor = Exception.class)
     public Video uploadVideo(MultipartFile file, String title, String description) {
-        // 1. 校验登录状态
         String userId = getCurrentUserId();
-
-        // 2. 校验文件
         validateFile(file);
-
-        // 3. 提取格式
         String format = extractFormat(file.getOriginalFilename());
-
-        // 4. 确保 MinIO bucket 存在
         ensureBucketExists();
 
-        // 5. 上传到 MinIO
         String objectName = UUID.randomUUID() + "-" + System.currentTimeMillis() + "." + format;
         try {
             minioClient.putObject(
@@ -64,7 +68,6 @@ public class VideoService {
             throw new CustomerException("500", "视频文件上传存储失败");
         }
 
-        // 6. 写入数据库
         String videoId = UUID.randomUUID().toString().replace("-", "");
         Video video = new Video();
         video.setVideoId(videoId);
@@ -84,7 +87,6 @@ public class VideoService {
             log.info("视频记录入库成功 - videoId: {}", videoId);
         } catch (Exception e) {
             log.error("视频记录入库失败，尝试清理MinIO文件: {}", e.getMessage(), e);
-            // 尝试回滚已上传的 MinIO 文件
             try {
                 minioClient.removeObject(
                         RemoveObjectArgs.builder().bucket(BUCKET_NAME).object(objectName).build()
@@ -96,6 +98,52 @@ public class VideoService {
         }
 
         return video;
+    }
+
+    /**
+     * 推荐视频流：按点赞数排序，排除已看过的
+     */
+    public List<Video> getRecommendedFeed(int limit, int offset) {
+        String userId = getCurrentUserId();
+        return videoMapper.selectRecommended(userId, limit, offset);
+    }
+
+    /**
+     * 记录浏览 + 返回视频详情
+     */
+    public Video getVideoInfo(String videoId) {
+        Video video = videoMapper.selectByVideoId(videoId);
+        if (video == null) {
+            throw new CustomerException("404", "视频不存在");
+        }
+        // 自动记录浏览
+        try {
+            String userId = getCurrentUserId();
+            viewRecordMapper.insertIgnore(userId, videoId);
+        } catch (Exception ignored) {
+            // 浏览记录不影响主流程
+        }
+        return video;
+    }
+
+    /**
+     * 手动记录浏览（前端主动调用）
+     */
+    public void recordView(String videoId) {
+        String userId = getCurrentUserId();
+        Video video = videoMapper.selectByVideoId(videoId);
+        if (video == null) {
+            throw new CustomerException("404", "视频不存在");
+        }
+        viewRecordMapper.insertIgnore(userId, videoId);
+    }
+
+    /**
+     * 查询当前用户是否已浏览过
+     */
+    public boolean isViewed(String videoId) {
+        String userId = getCurrentUserId();
+        return viewRecordMapper.countByUserAndVideo(userId, videoId) > 0;
     }
 
     public String getVideoUrl(String videoId) {
@@ -118,20 +166,121 @@ public class VideoService {
         }
     }
 
-    public Video getVideoInfo(String videoId) {
-        Video video = videoMapper.selectByVideoId(videoId);
-        if (video == null) {
-            throw new CustomerException("404", "视频不存在");
-        }
-        return video;
-    }
-
     public List<Video> getVideoListByUser(String userId) {
         return videoMapper.selectByUserId(userId);
     }
 
     public List<Video> getFeed(int limit, int offset) {
         return videoMapper.selectFeed(limit, offset);
+    }
+
+    /**
+     * 点赞
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void likeVideo(String videoId) {
+        String userId = getCurrentUserId();
+        Video video = videoMapper.selectByVideoId(videoId);
+        if (video == null) {
+            throw new CustomerException("404", "视频不存在");
+        }
+        int inserted = likeRecordMapper.insertIgnore(userId, videoId);
+        if (inserted > 0) {
+            videoMapper.incrementLikeCount(videoId);
+            log.info("用户 {} 点赞视频 {} 成功", userId, videoId);
+        } else {
+            log.info("用户 {} 已经点过赞了", userId);
+        }
+    }
+
+    /**
+     * 取消点赞
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void unlikeVideo(String videoId) {
+        String userId = getCurrentUserId();
+        Video video = videoMapper.selectByVideoId(videoId);
+        if (video == null) {
+            throw new CustomerException("404", "视频不存在");
+        }
+        int deleted = likeRecordMapper.delete(userId, videoId);
+        if (deleted > 0) {
+            videoMapper.decrementLikeCount(videoId);
+            log.info("用户 {} 取消点赞视频 {} 成功", userId, videoId);
+        } else {
+            log.info("用户 {} 未点过赞，无需取消", userId);
+        }
+    }
+
+    /**
+     * 查询当前用户是否已点赞
+     */
+    public boolean isLiked(String videoId) {
+        String userId = getCurrentUserId();
+        return likeRecordMapper.countByUserAndVideo(userId, videoId) > 0;
+    }
+
+    /**
+     * 收藏视频
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void favoriteVideo(String videoId) {
+        String userId = getCurrentUserId();
+        Video video = videoMapper.selectByVideoId(videoId);
+        if (video == null) {
+            throw new CustomerException("404", "视频不存在");
+        }
+        int inserted = favoriteRecordMapper.insertIgnore(userId, videoId);
+        if (inserted > 0) {
+            log.info("用户 {} 收藏视频 {} 成功", userId, videoId);
+        } else {
+            log.info("用户 {} 已经收藏过了", userId);
+        }
+    }
+
+    /**
+     * 取消收藏
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void unfavoriteVideo(String videoId) {
+        String userId = getCurrentUserId();
+        int deleted = favoriteRecordMapper.delete(userId, videoId);
+        if (deleted > 0) {
+            log.info("用户 {} 取消收藏视频 {} 成功", userId, videoId);
+        }
+    }
+
+    /**
+     * 查询当前用户是否已收藏
+     */
+    public boolean isFavorited(String videoId) {
+        String userId = getCurrentUserId();
+        return favoriteRecordMapper.countByUserAndVideo(userId, videoId) > 0;
+    }
+
+    /**
+     * 获取用户收藏列表
+     */
+    public List<Video> getFavoriteList() {
+        String userId = getCurrentUserId();
+        return favoriteRecordMapper.selectFavoritesByUserId(userId);
+    }
+
+    /**
+     * 删除视频（软删除，仅作者可删）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteVideo(String videoId) {
+        String userId = getCurrentUserId();
+        int affected = videoMapper.softDelete(videoId, userId);
+        if (affected == 0) {
+            Video video = videoMapper.selectByVideoId(videoId);
+            if (video == null) {
+                throw new CustomerException("404", "视频不存在");
+            }
+            throw new CustomerException("403", "只能删除自己的视频");
+        }
+        log.info("用户 {} 删除视频 {} 成功", userId, videoId);
     }
 
     private void validateFile(MultipartFile file) {
