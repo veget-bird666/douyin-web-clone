@@ -2,6 +2,7 @@ package com.example.springboot.controller;
 
 import com.example.springboot.common.Result;
 import com.example.springboot.entity.Video;
+import com.example.springboot.exception.CustomerException;
 import com.example.springboot.service.VideoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,16 +31,10 @@ public class VideoController {
             @RequestPart("file") MultipartFile file,
             @RequestParam("title") String title,
             @RequestParam(value = "description", required = false) String description) {
-        log.info("upload请求 - title: {}, description: {}, fileSize: {}", title, description, file.getSize());
-        try {
-            String videoId = videoService.uploadVideo(file, title, description);
-            Video video = videoService.getVideoInfo(videoId);
-            log.info("上传成功 - videoId: {}", videoId);
-            return Result.success(video);
-        } catch (Exception e) {
-            log.error("上传失败: {}", e.getMessage(), e);
-            return Result.error("上传失败: " + e.getMessage());
-        }
+        log.info("上传视频请求 - title: {}, fileSize: {}", title, file.getSize());
+        Video video = videoService.uploadVideo(file, title, description);
+        log.info("视频上传成功 - videoId: {}", video.getVideoId());
+        return Result.success(video, "上传成功");
     }
 
     @GetMapping("/list")
@@ -62,26 +57,15 @@ public class VideoController {
     @Operation(summary = "视频详情")
     public Result getVideoInfo(@PathVariable String videoId) {
         Video video = videoService.getVideoInfo(videoId);
-        if (video == null) {
-            return Result.error("视频不存在");
-        }
         return Result.success(video);
     }
 
     @GetMapping("/url/{videoId}")
-    @Operation(summary = "获取视频URL")
+    @Operation(summary = "获取视频播放地址")
     public Result getVideoUrl(@PathVariable String videoId) {
-        try {
-            String url = videoService.getVideoUrl(videoId);
-            return Result.success(new UrlResult(url));
-        } catch (Exception e) {
-            return Result.error("获取视频URL失败: " + e.getMessage());
-        }
+        String url = videoService.getVideoUrl(videoId);
+        return Result.success(new UrlResponse(url));
     }
 
-    public static class UrlResult {
-        private String url;
-        public UrlResult(String url) { this.url = url; }
-        public String getUrl() { return url; }
-    }
+    public record UrlResponse(String url) {}
 }

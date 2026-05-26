@@ -16,7 +16,8 @@
       "Bash(curl -s http://localhost:8080/v3/api-docs)",
       "Bash(curl:*)",
       "Bash(mysql:*)",
-      "Bash(mc ls:*)"
+      "Bash(mc ls:*)",
+      "Bash(ls -la \"D:/douyin-web-clone/springboot/\" *.md)"
     ]
   }
 }

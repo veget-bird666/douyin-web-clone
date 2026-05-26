@@ -2,9 +2,13 @@ server:
   port: 8080
   servlet:
     context-path: /
-  tomcat:
-    max-file-size: 100MB
-    max-request-size: 100MB
+    tomcat:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      connection-timeout: 120000
+  error:
+    include-message: always
+    include-binding-errors: always
 
 spring:
   servlet:
@@ -16,6 +20,10 @@ spring:
     username: root
     password: 123456
     url: jdbc:mysql://localhost:3306/douyin_clone?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   mail:
     host: smtp.xindudu.online
     port: 465
