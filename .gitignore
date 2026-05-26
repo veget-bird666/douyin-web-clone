@@ -35,3 +35,4 @@ dist-ssr/
 # Application generated files
 uploads/
 storage/
+.claude/
