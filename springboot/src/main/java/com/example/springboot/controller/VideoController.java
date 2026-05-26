@@ -2,7 +2,6 @@ package com.example.springboot.controller;
 
 import com.example.springboot.common.Result;
 import com.example.springboot.entity.Video;
-import com.example.springboot.exception.CustomerException;
 import com.example.springboot.service.VideoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/video")
@@ -37,8 +37,17 @@ public class VideoController {
         return Result.success(video, "上传成功");
     }
 
+    @GetMapping("/recommend")
+    @Operation(summary = "推荐视频流（按点赞数排序，排除已看过的）")
+    public Result getRecommended(
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value = "offset", defaultValue = "0") int offset) {
+        List<Video> videos = videoService.getRecommendedFeed(limit, offset);
+        return Result.success(videos);
+    }
+
     @GetMapping("/list")
-    @Operation(summary = "视频流列表")
+    @Operation(summary = "全部视频流（按时间排序）")
     public Result getFeed(
             @RequestParam(value = "limit", defaultValue = "10") int limit,
             @RequestParam(value = "offset", defaultValue = "0") int offset) {
@@ -54,7 +63,7 @@ public class VideoController {
     }
 
     @GetMapping("/info/{videoId}")
-    @Operation(summary = "视频详情")
+    @Operation(summary = "视频详情（自动记录浏览）")
     public Result getVideoInfo(@PathVariable String videoId) {
         Video video = videoService.getVideoInfo(videoId);
         return Result.success(video);
@@ -65,6 +74,75 @@ public class VideoController {
     public Result getVideoUrl(@PathVariable String videoId) {
         String url = videoService.getVideoUrl(videoId);
         return Result.success(new UrlResponse(url));
+    }
+
+    @PostMapping("/view/{videoId}")
+    @Operation(summary = "记录浏览")
+    public Result recordView(@PathVariable String videoId) {
+        videoService.recordView(videoId);
+        return Result.success(null, "已记录浏览");
+    }
+
+    @GetMapping("/viewed/{videoId}")
+    @Operation(summary = "查询当前用户是否已浏览过")
+    public Result isViewed(@PathVariable String videoId) {
+        boolean viewed = videoService.isViewed(videoId);
+        return Result.success(Map.of("viewed", viewed));
+    }
+
+    @PostMapping("/like/{videoId}")
+    @Operation(summary = "点赞视频")
+    public Result likeVideo(@PathVariable String videoId) {
+        videoService.likeVideo(videoId);
+        return Result.success(null, "点赞成功");
+    }
+
+    @PostMapping("/unlike/{videoId}")
+    @Operation(summary = "取消点赞")
+    public Result unlikeVideo(@PathVariable String videoId) {
+        videoService.unlikeVideo(videoId);
+        return Result.success(null, "已取消点赞");
+    }
+
+    @GetMapping("/liked/{videoId}")
+    @Operation(summary = "查询当前用户是否已点赞")
+    public Result isLiked(@PathVariable String videoId) {
+        boolean liked = videoService.isLiked(videoId);
+        return Result.success(Map.of("liked", liked));
+    }
+
+    @PostMapping("/favorite/{videoId}")
+    @Operation(summary = "收藏视频")
+    public Result favoriteVideo(@PathVariable String videoId) {
+        videoService.favoriteVideo(videoId);
+        return Result.success(null, "收藏成功");
+    }
+
+    @PostMapping("/unfavorite/{videoId}")
+    @Operation(summary = "取消收藏")
+    public Result unfavoriteVideo(@PathVariable String videoId) {
+        videoService.unfavoriteVideo(videoId);
+        return Result.success(null, "已取消收藏");
+    }
+
+    @GetMapping("/favorited/{videoId}")
+    @Operation(summary = "查询当前用户是否已收藏")
+    public Result isFavorited(@PathVariable String videoId) {
+        boolean favorited = videoService.isFavorited(videoId);
+        return Result.success(Map.of("favorited", favorited));
+    }
+
+    @GetMapping("/favorites")
+    @Operation(summary = "获取我的收藏列表")
+    public Result getFavorites() {
+        return Result.success(videoService.getFavoriteList());
+    }
+
+    @DeleteMapping("/{videoId}")
+    @Operation(summary = "删除视频（仅作者可删）")
+    public Result deleteVideo(@PathVariable String videoId) {
+        videoService.deleteVideo(videoId);
+        return Result.success(null, "删除成功");
     }
 
     public record UrlResponse(String url) {}

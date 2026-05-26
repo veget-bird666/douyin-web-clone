@@ -4,6 +4,7 @@ import com.example.springboot.entity.Video;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -23,4 +24,18 @@ public interface VideoMapper {
 
     @Select("SELECT * FROM video WHERE status = 1 ORDER BY create_time DESC LIMIT #{limit} OFFSET #{offset}")
     List<Video> selectFeed(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("SELECT * FROM video WHERE status = 1 AND video_id NOT IN " +
+            "(SELECT video_id COLLATE utf8mb4_unicode_ci FROM view_record WHERE user_id = #{userId}) " +
+            "ORDER BY like_count DESC, create_time DESC LIMIT #{limit} OFFSET #{offset}")
+    List<Video> selectRecommended(@Param("userId") String userId, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Update("UPDATE video SET like_count = like_count + 1 WHERE video_id = #{videoId}")
+    int incrementLikeCount(@Param("videoId") String videoId);
+
+    @Update("UPDATE video SET like_count = GREATEST(like_count - 1, 0) WHERE video_id = #{videoId}")
+    int decrementLikeCount(@Param("videoId") String videoId);
+
+    @Update("UPDATE video SET status = 2 WHERE video_id = #{videoId} AND user_id = #{userId}")
+    int softDelete(@Param("videoId") String videoId, @Param("userId") String userId);
 }
