@@ -4,14 +4,21 @@ import com.example.springboot.exception.CustomerException;
 import com.example.springboot.feature.auth.entity.User;
 import com.example.springboot.feature.auth.mapper.UserMapper;
 import com.example.springboot.feature.auth.util.JwtUtil;
+import com.example.springboot.mapper.FavoriteRecordMapper;
+import com.example.springboot.mapper.LikeRecordMapper;
+import com.example.springboot.mapper.VideoMapper;
+import com.example.springboot.mapper.ViewRecordMapper;
 import jakarta.annotation.Resource;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +39,18 @@ public class AuthService {
 
     @Resource
     private JwtUtil jwtUtil;
+
+    @Resource
+    private VideoMapper videoMapper;
+
+    @Resource
+    private LikeRecordMapper likeRecordMapper;
+
+    @Resource
+    private ViewRecordMapper viewRecordMapper;
+
+    @Resource
+    private FavoriteRecordMapper favoriteRecordMapper;
 
     @Autowired(required = false)
     private JavaMailSender mailSender;
@@ -127,6 +146,37 @@ public class AuthService {
         data.put("token", token);
         data.put("user", userInfo);
         return data;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAccount() {
+        String userId = getCurrentUserId();
+        User user = userMapper.selectByUserId(userId);
+        if (user == null) {
+            throw new CustomerException("404", "用户不存在");
+        }
+
+        likeRecordMapper.deleteByUserId(userId);
+        viewRecordMapper.deleteByUserId(userId);
+        favoriteRecordMapper.deleteByUserId(userId);
+        videoMapper.softDeleteAllByUserId(userId);
+        userMapper.deleteByUserId(userId);
+
+        if (user.getEmail() != null) {
+            emailCodeStore.remove(user.getEmail().trim().toLowerCase());
+        }
+    }
+
+    private String getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new CustomerException("401", "用户未登录");
+        }
+        String userId = (String) auth.getCredentials();
+        if (userId == null || userId.isBlank()) {
+            throw new CustomerException("401", "用户身份无效");
+        }
+        return userId;
     }
 
     private void verifyCode(String email, String code) {

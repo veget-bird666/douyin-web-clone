@@ -16,6 +16,9 @@ public interface FavoriteRecordMapper {
     @Delete("DELETE FROM favorite_record WHERE user_id = #{userId} AND video_id = #{videoId}")
     int delete(@Param("userId") String userId, @Param("videoId") String videoId);
 
+    @Delete("DELETE FROM favorite_record WHERE user_id = #{userId}")
+    int deleteByUserId(@Param("userId") String userId);
+
     @Select("SELECT COUNT(*) FROM favorite_record WHERE user_id = #{userId} AND video_id = #{videoId}")
     int countByUserAndVideo(@Param("userId") String userId, @Param("videoId") String videoId);
 

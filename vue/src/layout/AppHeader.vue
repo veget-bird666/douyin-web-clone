@@ -1,25 +1,8 @@
 <template>
   <header class="header">
-    <div class="header-search">
-      <el-icon class="search-icon"><Search /></el-icon>
-      <input
-        type="search"
-        placeholder="搜索你感兴趣的内容"
-        aria-label="搜索"
-      />
-    </div>
+    <h1 class="header-title">{{ pageTitle }}</h1>
 
     <div class="header-actions">
-      <button
-        v-for="action in actions"
-        :key="action.label"
-        type="button"
-        class="action-btn"
-        :title="action.label"
-      >
-        <el-icon><component :is="action.icon" /></el-icon>
-      </button>
-
       <div class="avatar-wrap">
         <button
           type="button"
@@ -44,8 +27,11 @@
             <span class="menu-name">{{ displayName }}</span>
             <span class="menu-email">{{ user?.email }}</span>
           </div>
-          <button type="button" class="menu-item" @click="logout(); showMenu = false">
+          <button type="button" class="menu-item" @click="onLogout">
             退出登录
+          </button>
+          <button type="button" class="menu-item menu-item-danger" @click="onDeleteAccount">
+            注销账号
           </button>
         </div>
       </div>
@@ -56,39 +42,57 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import {
-  Search,
-  User,
-  Coin,
-  Monitor,
-  Trophy,
-  Bell,
-  ChatDotRound,
-  Upload,
-} from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { User } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import AuthDialog from '@/features/auth/components/AuthDialog.vue'
 
-const { isLoggedIn, displayName, avatarText, user, logout } = useAuth()
+const route = useRoute()
+const { isLoggedIn, displayName, avatarText, user, logout, deleteAccount } = useAuth()
 
 const authVisible = ref(false)
 const showMenu = ref(false)
 
-const actions = [
-  { label: '充值', icon: Coin },
-  { label: '客户端', icon: Monitor },
-  { label: '壁纸', icon: Trophy },
-  { label: '通知', icon: Bell },
-  { label: '私信', icon: ChatDotRound },
-  { label: '投稿', icon: Upload },
-]
+const pageTitle = computed(() => route.meta?.title || '推荐')
 
 function onAvatarClick() {
   if (isLoggedIn.value) {
     showMenu.value = !showMenu.value
   } else {
     authVisible.value = true
+  }
+}
+
+function onLogout() {
+  logout()
+  showMenu.value = false
+  ElMessage.success('已退出登录')
+}
+
+async function onDeleteAccount() {
+  showMenu.value = false
+  try {
+    await ElMessageBox.confirm(
+      '注销后账号及相关数据将无法恢复，确定要注销吗？',
+      '注销账号',
+      {
+        confirmButtonText: '确定注销',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger',
+      },
+    )
+  } catch {
+    return
+  }
+
+  const res = await deleteAccount()
+  if (res.isSuccess) {
+    ElMessage.success('账号已注销')
+  } else {
+    ElMessage.error(res.message || '注销失败')
   }
 }
 
@@ -119,66 +123,17 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   z-index: 90;
 }
 
-.header-search {
-  flex: 1;
-  max-width: 480px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 40px;
-  padding: 0 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid transparent;
-  border-radius: 20px;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.header-search:focus-within {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.search-icon {
-  color: var(--dy-text-muted);
+.header-title {
+  margin: 0;
   font-size: 18px;
-}
-
-.header-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
+  font-weight: 600;
   color: var(--dy-text);
-  font-size: 14px;
-  outline: none;
-}
-
-.header-search input::placeholder {
-  color: var(--dy-text-muted);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.action-btn {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--dy-text-secondary);
-  font-size: 20px;
-  transition: background 0.15s, color 0.15s;
-}
-
-.action-btn:hover {
-  background: var(--dy-bg-hover);
-  color: var(--dy-text);
 }
 
 .avatar-wrap {
@@ -272,5 +227,13 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 
 .menu-item:hover {
   background: var(--dy-bg-hover);
+}
+
+.menu-item-danger {
+  color: #fe2c55;
+}
+
+.menu-item-danger:hover {
+  background: rgba(254, 44, 85, 0.1);
 }
 </style>

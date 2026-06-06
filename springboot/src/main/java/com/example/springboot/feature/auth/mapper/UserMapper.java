@@ -9,5 +9,9 @@ public interface UserMapper {
 
     User selectById(@Param("id") Long id);
 
+    User selectByUserId(@Param("userId") String userId);
+
     int insert(User user);
+
+    int deleteByUserId(@Param("userId") String userId);
 }

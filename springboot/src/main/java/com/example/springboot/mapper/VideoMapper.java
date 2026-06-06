@@ -38,4 +38,7 @@ public interface VideoMapper {
 
     @Update("UPDATE video SET status = 2 WHERE video_id = #{videoId} AND user_id = #{userId}")
     int softDelete(@Param("videoId") String videoId, @Param("userId") String userId);
+
+    @Update("UPDATE video SET status = 2 WHERE user_id = #{userId}")
+    int softDeleteAllByUserId(@Param("userId") String userId);
 }

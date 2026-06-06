@@ -67,6 +67,14 @@ export function useAuth() {
     clearSession()
   }
 
+  async function deleteAccount() {
+    const res = await authApi.deleteAccount()
+    if (res.isSuccess) {
+      clearSession()
+    }
+    return res
+  }
+
   return {
     token,
     user,
@@ -77,5 +85,6 @@ export function useAuth() {
     register,
     sendCode,
     logout,
+    deleteAccount,
   }
 }

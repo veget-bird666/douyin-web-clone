@@ -5,6 +5,7 @@ import com.example.springboot.feature.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +35,13 @@ public class AuthController {
     @Operation(summary = "登录")
     public Result login(@RequestBody LoginRequest request) {
         return Result.success(authService.login(request.getEmail(), request.getPassword()), "登录成功");
+    }
+
+    @DeleteMapping("/account")
+    @Operation(summary = "注销账号")
+    public Result deleteAccount() {
+        authService.deleteAccount();
+        return Result.success(null, "账号已注销");
     }
 
     public static class SendCodeRequest {

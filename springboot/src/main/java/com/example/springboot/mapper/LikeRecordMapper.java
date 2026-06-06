@@ -13,6 +13,9 @@ public interface LikeRecordMapper {
     @Delete("DELETE FROM like_record WHERE user_id = #{userId} AND video_id = #{videoId}")
     int delete(@Param("userId") String userId, @Param("videoId") String videoId);
 
+    @Delete("DELETE FROM like_record WHERE user_id = #{userId}")
+    int deleteByUserId(@Param("userId") String userId);
+
     @Select("SELECT COUNT(*) FROM like_record WHERE user_id = #{userId} AND video_id = #{videoId}")
     int countByUserAndVideo(@Param("userId") String userId, @Param("videoId") String videoId);
 }

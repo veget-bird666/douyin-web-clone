@@ -19,9 +19,20 @@
         LIMIT 1
     </select>
 
+    <select id="selectByUserId" resultType="com.example.springboot.feature.auth.entity.User">
+        SELECT id, user_id AS userId, nickname, email, password_hash AS passwordHash, avatar, create_time AS createTime
+        FROM `user`
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `user` (user_id, nickname, email, password_hash)
         VALUES (#{userId}, #{nickname}, #{email}, #{passwordHash})
     </insert>
+
+    <delete id="deleteByUserId">
+        DELETE FROM `user` WHERE user_id = #{userId}
+    </delete>
 
 </mapper>

@@ -30,3 +30,9 @@ export function login({ email, password }) {
     },
   })
 }
+
+export function deleteAccount() {
+  return request(`${AUTH_PREFIX}/account`, {
+    method: 'DELETE',
+  })
+}
