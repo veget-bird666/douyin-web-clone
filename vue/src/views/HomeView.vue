@@ -19,13 +19,17 @@
         点击右上角头像登录或注册
       </p>
       <p v-else class="panel-hint">
-        你好，{{ displayName }}！后端接口已就绪，推荐页联调开发中。
+        你好，{{ displayName }}！后端接口已就绪，已支持推荐页对接。
       </p>
+      <div style="margin-top: 20px;">
+        <RouterLink to="/recommend" class="link-button">进入推荐页</RouterLink>
+      </div>
     </section>
   </MainLayout>
 </template>
 
 <script setup>
+import { RouterLink } from 'vue-router'
 import MainLayout from '@/layout/MainLayout.vue'
 import { useAuth } from '@/features/auth/composables/useAuth'
 
@@ -131,5 +135,15 @@ const features = [
   margin: 0;
   font-size: 13px;
   color: var(--dy-text-muted);
+}
+
+.link-button {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 18px;
+  color: #fff;
+  background: #1890ff;
+  border-radius: 20px;
+  text-decoration: none;
 }
 </style>
