@@ -34,8 +34,10 @@ CREATE TABLE `comment` (
   `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论用户ID',
   `video_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '所属视频ID',
   `parent_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '父评论ID，null表示一级评论',
+  `reply_to_user_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '被回复用户ID',
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论内容',
   `like_count` int NOT NULL DEFAULT '0' COMMENT '评论点赞数',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '0正常 1被折叠',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_comment_id` (`comment_id`),
@@ -44,6 +46,21 @@ CREATE TABLE `comment` (
   KEY `idx_parent_id` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `comment_like_record`
+--
+
+DROP TABLE IF EXISTS `comment_like_record`;
+CREATE TABLE `comment_like_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '内部ID',
+  `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户ID',
+  `comment_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_comment` (`user_id`,`comment_id`),
+  KEY `idx_comment_id` (`comment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论点赞表';
 
 --
 -- Table structure for table `favorite_record`

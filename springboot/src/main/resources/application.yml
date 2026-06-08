@@ -3,8 +3,8 @@ server:
   servlet:
     context-path: /
     tomcat:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 500MB
+      max-request-size: 500MB
       connection-timeout: 120000
   error:
     include-message: always
@@ -13,8 +13,8 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 500MB
+      max-request-size: 500MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root

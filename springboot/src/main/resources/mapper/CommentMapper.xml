@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.springboot.mapper.CommentMapper">
+
+    <resultMap id="CommentVOMap" type="com.example.springboot.entity.CommentVO">
+        <result column="comment_id" property="commentId"/>
+        <result column="user_id" property="userId"/>
+        <result column="video_id" property="videoId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="reply_to_user_id" property="replyToUserId"/>
+        <result column="reply_to_nickname" property="replyToNickname"/>
+        <result column="content" property="content"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO comment (comment_id, user_id, video_id, parent_id, reply_to_user_id, content, like_count, status)
+        VALUES (#{commentId}, #{userId}, #{videoId}, #{parentId}, #{replyToUserId}, #{content}, #{likeCount}, #{status})
+    </insert>
+
+    <select id="selectByCommentId" resultType="com.example.springboot.entity.Comment">
+        SELECT id, comment_id AS commentId, user_id AS userId, video_id AS videoId,
+               parent_id AS parentId, reply_to_user_id AS replyToUserId,
+               content, like_count AS likeCount, status, create_time AS createTime
+        FROM comment
+        WHERE comment_id = #{commentId}
+        LIMIT 1
+    </select>
+
+    <select id="selectTopLevelByVideoId" resultMap="CommentVOMap">
+        SELECT c.comment_id, c.user_id, c.video_id, c.parent_id, c.reply_to_user_id,
+               ru.nickname AS reply_to_nickname,
+               c.content, c.like_count, c.status, c.create_time,
+               u.nickname, u.avatar
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.user_id
+        LEFT JOIN user ru ON c.reply_to_user_id = ru.user_id
+        WHERE c.video_id = #{videoId} AND c.parent_id IS NULL
+        ORDER BY c.create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectRepliesByParentId" resultMap="CommentVOMap">
+        SELECT c.comment_id, c.user_id, c.video_id, c.parent_id, c.reply_to_user_id,
+               COALESCE(ru.nickname, ru2.nickname) AS reply_to_nickname,
+               c.content, c.like_count, c.status, c.create_time,
+               u.nickname, u.avatar
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.user_id
+        LEFT JOIN user ru ON c.reply_to_user_id = ru.user_id
+        LEFT JOIN comment root ON c.parent_id = root.comment_id
+        LEFT JOIN user ru2 ON root.user_id = ru2.user_id
+        WHERE c.parent_id = #{parentId}
+        ORDER BY c.create_time ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countRepliesByParentId" resultType="int">
+        SELECT COUNT(*) FROM comment WHERE parent_id = #{parentId}
+    </select>
+
+    <select id="countByVideoId" resultType="int">
+        SELECT COUNT(*) FROM comment WHERE video_id = #{videoId}
+    </select>
+
+    <update id="incrementLikeCount">
+        UPDATE comment SET like_count = like_count + 1 WHERE comment_id = #{commentId}
+    </update>
+
+    <update id="decrementLikeCount">
+        UPDATE comment SET like_count = GREATEST(like_count - 1, 0) WHERE comment_id = #{commentId}
+    </update>
+
+    <update id="foldComment">
+        UPDATE comment SET status = 1 WHERE comment_id = #{commentId}
+    </update>
+
+    <update id="unfoldComment">
+        UPDATE comment SET status = 0 WHERE comment_id = #{commentId}
+    </update>
+
+    <delete id="deleteByCommentId">
+        DELETE FROM comment WHERE comment_id = #{commentId}
+    </delete>
+
+    <delete id="deleteRepliesByParentId">
+        DELETE FROM comment WHERE parent_id = #{parentId}
+    </delete>
+
+</mapper>

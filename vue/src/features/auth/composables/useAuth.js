@@ -16,6 +16,17 @@ function readStoredUser() {
   }
 }
 
+function clearSession() {
+  token.value = ''
+  user.value = null
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('douyin:auth-expired', clearSession)
+}
+
 export function useAuth() {
   const isLoggedIn = computed(() => Boolean(token.value))
 
@@ -34,13 +45,6 @@ export function useAuth() {
     user.value = newUser
     localStorage.setItem(TOKEN_KEY, newToken)
     localStorage.setItem(USER_KEY, JSON.stringify(newUser))
-  }
-
-  function clearSession() {
-    token.value = ''
-    user.value = null
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
   }
 
   async function login(email, password) {

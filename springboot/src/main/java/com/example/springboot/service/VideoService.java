@@ -101,11 +101,15 @@ public class VideoService {
     }
 
     /**
-     * 推荐视频流：按点赞数排序，排除已看过的
+     * 推荐视频流：优先展示未看过的；若全部看过则重新展示全部视频（循环刷）
      */
     public List<Video> getRecommendedFeed(int limit, int offset) {
         String userId = getCurrentUserId();
-        return videoMapper.selectRecommended(userId, limit, offset);
+        List<Video> list = videoMapper.selectRecommended(userId, limit, offset);
+        if (list.isEmpty() && offset == 0) {
+            list = videoMapper.selectFeed(limit, offset);
+        }
+        return list;
     }
 
     /**
@@ -264,6 +268,13 @@ public class VideoService {
     public List<Video> getFavoriteList() {
         String userId = getCurrentUserId();
         return favoriteRecordMapper.selectFavoritesByUserId(userId);
+    }
+
+    /**
+     * 获取视频收藏数
+     */
+    public int getFavoriteCount(String videoId) {
+        return favoriteRecordMapper.countByVideoId(videoId);
     }
 
     /**

@@ -35,4 +35,6 @@ dist-ssr/
 # Application generated files
 uploads/
 storage/
+tools/minio/data/
+tools/minio/minio.exe
 .claude/

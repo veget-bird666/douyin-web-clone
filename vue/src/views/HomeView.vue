@@ -4,7 +4,7 @@
       <div class="panel-icon">抖</div>
       <h2 class="panel-title">视频流推荐系统</h2>
       <p class="panel-desc">
-        登录后可使用推荐、点赞、发布与管理视频等功能。当前推荐流页面开发中，可通过接口文档调试后端 API。
+        登录后可上传视频、在推荐页播放，并测试点赞与收藏功能。
       </p>
 
       <ul class="feature-list">
@@ -19,9 +19,34 @@
         点击右上角头像登录或注册
       </p>
       <p v-else class="panel-hint">
-        你好，{{ displayName }}！后端接口已就绪，已支持推荐页对接。
+        你好，{{ displayName }}！先上传视频，再进入推荐页体验。
       </p>
-      <div style="margin-top: 20px;">
+
+      <div v-if="isLoggedIn" class="upload-box">
+        <h3 class="upload-title">上传测试视频</h3>
+        <input
+          v-model="uploadTitle"
+          type="text"
+          class="upload-input"
+          placeholder="视频标题（必填）"
+        />
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+          class="upload-file"
+          @change="onFileChange"
+        />
+        <p v-if="selectedFile" class="upload-file-name">
+          {{ selectedFile.name }}（{{ formatSize(selectedFile.size) }}）
+        </p>
+        <p class="upload-tip">支持 mp4 等格式，单文件不超过 500MB</p>
+        <button class="upload-btn" :disabled="uploading" @click="onUpload">
+          {{ uploading ? '上传中...' : '上传视频' }}
+        </button>
+      </div>
+
+      <div class="action-links">
         <RouterLink to="/recommend" class="link-button">进入推荐页</RouterLink>
       </div>
     </section>
@@ -29,19 +54,70 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import MainLayout from '@/layout/MainLayout.vue'
 import { useAuth } from '@/features/auth/composables/useAuth'
+import { uploadVideo } from '@/features/video/api'
 
 const { isLoggedIn, displayName } = useAuth()
 
+const uploadTitle = ref('')
+const selectedFile = ref(null)
+const uploading = ref(false)
+const fileInputRef = ref(null)
+
 const features = [
   { label: '用户注册 / 登录 / 注销', status: 'done', statusText: '已可用' },
-  { label: '视频推荐（按点赞排序 + 去重）', status: 'api', statusText: '后端已就绪' },
-  { label: '视频点赞 / 取消点赞', status: 'api', statusText: '后端已就绪' },
-  { label: '视频上传 / 我的视频 / 删除', status: 'api', statusText: '后端已就绪' },
-  { label: '推荐流上下滑动播放', status: 'pending', statusText: '开发中' },
+  { label: '视频推荐 / 播放', status: 'done', statusText: '已可用' },
+  { label: '视频点赞 / 收藏', status: 'done', statusText: '已可用' },
+  { label: '视频上传', status: 'done', statusText: '本页可上传' },
+  { label: '视频评论', status: 'done', statusText: '已可用' },
 ]
+
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024
+
+function formatSize(bytes) {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+function onFileChange(e) {
+  selectedFile.value = e.target.files?.[0] || null
+}
+
+async function onUpload() {
+  if (!selectedFile.value) {
+    ElMessage.warning('请先选择视频文件（mp4 等）')
+    return
+  }
+  if (!uploadTitle.value.trim()) {
+    ElMessage.warning('请填写视频标题')
+    return
+  }
+  if (selectedFile.value.size > MAX_UPLOAD_BYTES) {
+    ElMessage.warning('视频不能超过 500MB，请换一个小一点的文件')
+    return
+  }
+
+  uploading.value = true
+  try {
+    const res = await uploadVideo(selectedFile.value, uploadTitle.value.trim())
+    if (res.isSuccess) {
+      ElMessage.success('上传成功，可以去推荐页观看了')
+      uploadTitle.value = ''
+      selectedFile.value = null
+      if (fileInputRef.value) fileInputRef.value.value = ''
+    } else {
+      ElMessage.error(res.message || '上传失败')
+    }
+  } catch (err) {
+    ElMessage.error(err?.message || '网络异常，请稍后重试')
+  } finally {
+    uploading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -109,17 +185,9 @@ const features = [
   flex-shrink: 0;
 }
 
-.feature-dot.done {
-  background: #52c41a;
-}
-
-.feature-dot.api {
-  background: #1890ff;
-}
-
-.feature-dot.pending {
-  background: var(--dy-text-muted);
-}
+.feature-dot.done { background: #52c41a; }
+.feature-dot.api { background: #1890ff; }
+.feature-dot.pending { background: var(--dy-text-muted); }
 
 .feature-label {
   flex: 1;
@@ -137,9 +205,73 @@ const features = [
   color: var(--dy-text-muted);
 }
 
+.upload-box {
+  margin-top: 24px;
+  padding: 20px;
+  text-align: left;
+  background: var(--dy-bg);
+  border: 1px dashed var(--dy-border);
+  border-radius: var(--dy-radius-lg);
+}
+
+.upload-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.upload-input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--dy-border);
+  border-radius: 8px;
+  background: var(--dy-bg-elevated);
+  color: var(--dy-text);
+  box-sizing: border-box;
+}
+
+.upload-file {
+  width: 100%;
+  font-size: 13px;
+}
+
+.upload-file-name {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--dy-text-secondary);
+  word-break: break-all;
+}
+
+.upload-tip {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--dy-text-muted);
+}
+
+.upload-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fe2c55;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-links {
+  margin-top: 20px;
+}
+
 .link-button {
   display: inline-block;
-  margin-top: 10px;
   padding: 10px 18px;
   color: #fff;
   background: #1890ff;

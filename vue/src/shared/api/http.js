@@ -35,6 +35,13 @@ export async function request(path, options = {}) {
 
   const code = json.code
   const isSuccess = code === 200 || code === '200'
+
+  if (code === 401 || code === '401') {
+    localStorage.removeItem('douyin_token')
+    localStorage.removeItem('douyin_user')
+    window.dispatchEvent(new Event('douyin:auth-expired'))
+  }
+
   return {
     isSuccess,
     message: json.message || json.msg || '',

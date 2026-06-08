@@ -46,7 +46,7 @@
         @after-enter="hearts = hearts.filter(x => x.id !== h.id)"
       >
         <div v-if="h.active" class="heart-anim" :style="{ left: h.x + 'px', top: h.y + 'px' }">
-          <el-icon :size="80"><StarFilled /></el-icon>
+          <DouyinIcon name="heart" filled class="heart-pop-icon" />
         </div>
       </Transition>
     </div>
@@ -68,26 +68,30 @@
 
       <!-- 点赞 -->
       <button class="action-btn" :class="{ active: isCurrentLiked }" @click.stop="toggleLike">
-        <el-icon :size="32"><StarFilled v-if="isCurrentLiked" /><Star v-else /></el-icon>
+        <DouyinIcon name="heart" :filled="isCurrentLiked" />
         <span class="action-count">{{ fmtCount(currentLikeCount) }}</span>
       </button>
 
       <!-- 评论 -->
-      <button class="action-btn" @click.stop>
-        <el-icon :size="32"><ChatDotRound /></el-icon>
-        <span class="action-count">{{ fmtCount(currentVideo?.commentCount || 0) }}</span>
+      <button class="action-btn" @click.stop="openComments">
+        <DouyinIcon name="comment" />
+        <span class="action-count">{{ fmtCount(currentCommentCount) }}</span>
       </button>
 
       <!-- 收藏 -->
-      <button class="action-btn" @click.stop>
-        <el-icon :size="32"><Star /></el-icon>
-        <span class="action-count">收藏</span>
+      <button
+        class="action-btn"
+        :class="{ favorited: isCurrentFavorited }"
+        @click.stop="toggleFavorite"
+      >
+        <DouyinIcon name="star" :filled="isCurrentFavorited" />
+        <span class="action-count">{{ fmtCount(currentFavoriteCount) }}</span>
       </button>
 
       <!-- 分享 -->
-      <button class="action-btn" @click.stop>
-        <el-icon :size="32"><Share /></el-icon>
-        <span class="action-count">分享</span>
+      <button class="action-btn" @click.stop="onShareClick">
+        <DouyinIcon name="share" />
+        <span class="action-count">{{ fmtCount(shareCount) }}</span>
       </button>
 
       <!-- 音乐碟片 -->
@@ -130,9 +134,23 @@
 
     <!-- 空状态 -->
     <div v-if="!loading && !currentVideo && !videos.length" class="empty-state">
-      <p>暂无推荐视频</p>
-      <button @click="fetchVideos">重新加载</button>
+      <p v-if="!isLoggedIn">请先登录后再查看推荐视频</p>
+      <p v-else-if="needUpload">暂无视频，请先在首页上传测试视频</p>
+      <p v-else>暂无推荐视频</p>
+      <button v-if="!isLoggedIn" class="empty-primary" @click="goLogin">去登录</button>
+      <button v-else-if="needUpload" class="empty-primary" @click="goLogin">去上传</button>
+      <button v-else @click="fetchVideos">重新加载</button>
     </div>
+
+    <CommentDrawer
+      v-model:visible="commentVisible"
+      :video-id="currentVideo?.videoId || ''"
+      :count="currentCommentCount"
+      :like-count="currentLikeCount"
+      :favorite-count="currentFavoriteCount"
+      :author-id="currentVideo?.userId || ''"
+      @update:count="onCommentCountUpdate"
+    />
   </div>
 </template>
 
@@ -142,9 +160,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import * as videoApi from '@/features/video/api'
+import DouyinIcon from '@/features/video/components/DouyinIcon.vue'
+import CommentDrawer from '@/features/comment/components/CommentDrawer.vue'
 
 const router = useRouter()
 const { isLoggedIn } = useAuth()
+
+const shareCount = 0
+const commentVisible = ref(false)
 
 // —— 核心状态 ——
 const pageRef = ref(null)
@@ -153,10 +176,14 @@ const currentIndex = ref(0)
 const videoUrls = ref({})
 const likedMap = ref({})
 const likeCountMap = ref({})
+const favoritedMap = ref({})
+const favoriteCountMap = ref({})
+const commentCountMap = ref({})
 const loading = ref(false)
 const isLoadingUrl = ref(false)
 const isSwiping = ref(false)
 const hasMore = ref(true)
+const needUpload = ref(false)
 const pageSize = 10
 const paused = ref(false)
 const showPlayIcon = ref(false)
@@ -194,6 +221,22 @@ const currentLikeCount = computed(() => {
   const vid = currentVideo.value.videoId
   if (likeCountMap.value[vid] !== undefined) return likeCountMap.value[vid]
   return currentVideo.value.likeCount || 0
+})
+const isCurrentFavorited = computed(() => {
+  if (!currentVideo.value) return false
+  return favoritedMap.value[currentVideo.value.videoId] || false
+})
+const currentFavoriteCount = computed(() => {
+  if (!currentVideo.value) return 0
+  const vid = currentVideo.value.videoId
+  if (favoriteCountMap.value[vid] !== undefined) return favoriteCountMap.value[vid]
+  return 0
+})
+const currentCommentCount = computed(() => {
+  if (!currentVideo.value) return 0
+  const vid = currentVideo.value.videoId
+  if (commentCountMap.value[vid] !== undefined) return commentCountMap.value[vid]
+  return currentVideo.value.commentCount || 0
 })
 
 const avatarChar = computed(() => {
@@ -270,11 +313,15 @@ async function fetchVideos() {
     const res = await videoApi.getRecommend(pageSize, offset)
     if (res.isSuccess) {
       const list = Array.isArray(res.data) ? res.data : []
+      needUpload.value = isLoggedIn.value && offset === 0 && list.length === 0
       if (list.length < pageSize) hasMore.value = false
       videos.value = [...videos.value, ...list]
       list.forEach(v => {
         if (likeCountMap.value[v.videoId] === undefined) {
           likeCountMap.value[v.videoId] = v.likeCount || 0
+        }
+        if (commentCountMap.value[v.videoId] === undefined) {
+          commentCountMap.value[v.videoId] = v.commentCount || 0
         }
       })
       if (offset === 0 && list.length > 0) {
@@ -282,6 +329,9 @@ async function fetchVideos() {
       }
     } else {
       ElMessage.error(res.message || '加载推荐视频失败')
+      if (res.code === 401 || res.code === '401') {
+        ElMessage.warning('登录已过期，请重新登录')
+      }
     }
   } catch {
     ElMessage.error('网络异常，请稍后重试')
@@ -303,13 +353,37 @@ async function loadCurrentVideo() {
     } catch { /* ignore */ }
     isLoadingUrl.value = false
   }
-  if (isLoggedIn.value && likedMap.value[v.videoId] === undefined) {
-    try {
-      const likedRes = await videoApi.isLiked(v.videoId)
-      if (likedRes.isSuccess) {
-        likedMap.value = { ...likedMap.value, [v.videoId]: likedRes.data?.liked || false }
-      }
-    } catch { /* ignore */ }
+  if (isLoggedIn.value) {
+    if (likedMap.value[v.videoId] === undefined) {
+      try {
+        const likedRes = await videoApi.isLiked(v.videoId)
+        if (likedRes.isSuccess) {
+          likedMap.value = { ...likedMap.value, [v.videoId]: likedRes.data?.liked || false }
+        }
+      } catch { /* ignore */ }
+    }
+    if (favoritedMap.value[v.videoId] === undefined) {
+      try {
+        const favoritedRes = await videoApi.isFavorited(v.videoId)
+        if (favoritedRes.isSuccess) {
+          favoritedMap.value = {
+            ...favoritedMap.value,
+            [v.videoId]: favoritedRes.data?.favorited || false,
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    if (favoriteCountMap.value[v.videoId] === undefined) {
+      try {
+        const countRes = await videoApi.getFavoriteCount(v.videoId)
+        if (countRes.isSuccess) {
+          favoriteCountMap.value = {
+            ...favoriteCountMap.value,
+            [v.videoId]: countRes.data?.count || 0,
+          }
+        }
+      } catch { /* ignore */ }
+    }
   }
 }
 
@@ -330,10 +404,44 @@ async function recordCurrentView() {
   try { await videoApi.recordView(v.videoId) } catch { /* ignore */ }
 }
 
+// —— 收藏 ——
+async function toggleFavorite() {
+  const v = currentVideo.value
+  if (!v) { ElMessage.info('暂无视频，请先在首页上传'); return }
+  if (!isLoggedIn.value) { ElMessage.warning('请先登录再收藏'); return }
+  const videoId = v.videoId
+  const wasFavorited = favoritedMap.value[videoId] || false
+  favoritedMap.value = { ...favoritedMap.value, [videoId]: !wasFavorited }
+  favoriteCountMap.value = {
+    ...favoriteCountMap.value,
+    [videoId]: Math.max(0, (favoriteCountMap.value[videoId] ?? 0) + (wasFavorited ? -1 : 1)),
+  }
+  try {
+    const res = wasFavorited
+      ? await videoApi.unfavoriteVideo(videoId)
+      : await videoApi.favoriteVideo(videoId)
+    if (!res.isSuccess) {
+      favoritedMap.value = { ...favoritedMap.value, [videoId]: wasFavorited }
+      favoriteCountMap.value = {
+        ...favoriteCountMap.value,
+        [videoId]: Math.max(0, (favoriteCountMap.value[videoId] ?? 0) + (wasFavorited ? 1 : -1)),
+      }
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch {
+    favoritedMap.value = { ...favoritedMap.value, [videoId]: wasFavorited }
+    favoriteCountMap.value = {
+      ...favoriteCountMap.value,
+      [videoId]: Math.max(0, (favoriteCountMap.value[videoId] ?? 0) + (wasFavorited ? 1 : -1)),
+    }
+    ElMessage.error('网络异常，请稍后重试')
+  }
+}
+
 // —— 点赞 ——
 async function toggleLike() {
   const v = currentVideo.value
-  if (!v) return
+  if (!v) { ElMessage.info('暂无视频，请先在首页上传'); return }
   if (!isLoggedIn.value) { ElMessage.warning('请先登录再点赞'); return }
   const videoId = v.videoId
   const wasLiked = likedMap.value[videoId] || false
@@ -399,6 +507,10 @@ function onTouchEnd() {
 // —— 滚轮 ——
 let wheelTimer = null
 function onWheel(e) {
+  // 评论区打开时，在抽屉内滚轮用于浏览评论，不切换视频
+  if (commentVisible.value && e.target.closest?.('.comment-drawer')) {
+    return
+  }
   e.preventDefault()
   if (wheelTimer) return
   wheelTimer = setTimeout(() => { wheelTimer = null }, 600)
@@ -434,12 +546,42 @@ function goBack() {
   router.push('/home')
 }
 
-watch(isLoggedIn, (loggedIn) => { if (!loggedIn) likedMap.value = {} })
+function goLogin() {
+  router.push('/home')
+}
+
+function openComments() {
+  if (!currentVideo.value) {
+    ElMessage.info('暂无视频，请先在首页上传')
+    return
+  }
+  commentVisible.value = true
+}
+
+function onCommentCountUpdate(count) {
+  const v = currentVideo.value
+  if (!v) return
+  commentCountMap.value = { ...commentCountMap.value, [v.videoId]: count }
+}
+
+function onShareClick() {
+  ElMessage.info('分享功能开发中')
+}
+
+watch(isLoggedIn, (loggedIn) => {
+  if (!loggedIn) {
+    likedMap.value = {}
+    favoritedMap.value = {}
+  }
+})
 
 onMounted(() => {
   document.body.style.overflow = 'hidden'
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('wheel', onWheel, { passive: false })
+  // 每次进入推荐页重新拉取（避免从首页返回时 hasMore 已为 false）
+  hasMore.value = true
+  videos.value = []
   fetchVideos()
 })
 onUnmounted(() => {
@@ -500,8 +642,12 @@ onUnmounted(() => {
 .heart-anim {
   position: absolute; z-index: 20; pointer-events: none;
   animation: heartPop 0.8s ease-out forwards;
+  color: #fe2c55;
 }
-.heart-anim .el-icon { color: #fe2c55; }
+.heart-pop-icon {
+  width: 80px !important;
+  height: 80px !important;
+}
 @keyframes heartPop {
   0% { transform: scale(0); opacity: 1; }
   30% { transform: scale(1.3); opacity: 1; }
@@ -543,7 +689,9 @@ onUnmounted(() => {
 }
 .action-btn:active { transform: scale(0.85); }
 .action-btn.active { color: #fe2c55; }
-.action-count { font-size: 11px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.action-btn.favorited { color: #face15; }
+.action-btn :deep(.dy-icon) { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45)); }
+.action-count { font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
 /* 音乐碟片 */
 .music-disc {
@@ -624,8 +772,13 @@ onUnmounted(() => {
   text-align: center; color: rgba(255,255,255,0.5); z-index: 10;
 }
 .empty-state p { margin: 0 0 16px; font-size: 16px; }
-.empty-state button {
+.empty-state button,
+.empty-primary {
   padding: 8px 24px; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
   background: none; color: #fff; font-size: 14px; cursor: pointer;
+}
+.empty-primary {
+  border-color: #fe2c55;
+  background: #fe2c55;
 }
 </style>

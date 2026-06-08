@@ -36,6 +36,12 @@ public interface VideoMapper {
     @Update("UPDATE video SET like_count = GREATEST(like_count - 1, 0) WHERE video_id = #{videoId}")
     int decrementLikeCount(@Param("videoId") String videoId);
 
+    @Update("UPDATE video SET comment_count = comment_count + 1 WHERE video_id = #{videoId}")
+    int incrementCommentCount(@Param("videoId") String videoId);
+
+    @Update("UPDATE video SET comment_count = GREATEST(comment_count - #{count}, 0) WHERE video_id = #{videoId}")
+    int decrementCommentCount(@Param("videoId") String videoId, @Param("count") int count);
+
     @Update("UPDATE video SET status = 2 WHERE video_id = #{videoId} AND user_id = #{userId}")
     int softDelete(@Param("videoId") String videoId, @Param("userId") String userId);
 

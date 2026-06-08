@@ -138,6 +138,12 @@ public class VideoController {
         return Result.success(videoService.getFavoriteList());
     }
 
+    @GetMapping("/favorite-count/{videoId}")
+    @Operation(summary = "获取视频收藏数")
+    public Result getFavoriteCount(@PathVariable String videoId) {
+        return Result.success(Map.of("count", videoService.getFavoriteCount(videoId)));
+    }
+
     @DeleteMapping("/{videoId}")
     @Operation(summary = "删除视频（仅作者可删）")
     public Result deleteVideo(@PathVariable String videoId) {
