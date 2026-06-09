@@ -4,8 +4,19 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $out = Join-Path $root "minio.exe"
 $url = "https://dl.min.io/server/minio/release/windows-amd64/minio.exe"
 
-Write-Host "正在下载 MinIO 到: $out"
-Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+Write-Host "Downloading MinIO to: $out"
+
+$curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+if ($curl) {
+    & curl.exe --ssl-no-revoke -L -o $out $url
+} else {
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+    } catch {
+        Write-Error "Download failed. Try manually: $url"
+    }
+}
 
 & $out --version
-Write-Host "下载完成。运行 start-minio.bat 启动服务。"
+Write-Host "Done. Run start-minio.bat to start the server."
