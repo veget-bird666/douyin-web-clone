@@ -102,6 +102,12 @@ public class LoggingAspect {
         if (arg instanceof HttpServletRequest || arg instanceof HttpServletResponse) {
             return "[servlet]";
         }
+        if (arg instanceof Map<?, ?> map) {
+            return map.toString();
+        }
+        if (arg instanceof Iterable<?> iterable) {
+            return iterable.toString();
+        }
         if (isSimpleValue(arg)) {
             return String.valueOf(arg);
         }
@@ -137,7 +143,7 @@ public class LoggingAspect {
                 }
             }
             return sb.append(")").toString();
-        } catch (ReflectiveOperationException e) {
+        } catch (Exception e) {
             return arg.getClass().getSimpleName();
         }
     }
