@@ -278,6 +278,27 @@ public class VideoService {
     }
 
     /**
+     * 更新视频信息（仅作者可改）
+     */
+    public Video updateVideo(String videoId, String title, String description) {
+        String userId = getCurrentUserId();
+        if (title == null || title.isBlank()) {
+            throw new CustomerException("400", "视频标题不能为空");
+        }
+        String desc = description == null ? "" : description;
+        int affected = videoMapper.updateInfo(videoId, userId, title.trim(), desc.trim());
+        if (affected == 0) {
+            Video video = videoMapper.selectByVideoId(videoId);
+            if (video == null) {
+                throw new CustomerException("404", "视频不存在");
+            }
+            throw new CustomerException("403", "只能修改自己的视频");
+        }
+        log.info("用户 {} 更新视频 {} 成功", userId, videoId);
+        return videoMapper.selectByVideoId(videoId);
+    }
+
+    /**
      * 删除视频（软删除，仅作者可删）
      */
     @Transactional(rollbackFor = Exception.class)

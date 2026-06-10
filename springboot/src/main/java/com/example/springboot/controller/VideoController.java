@@ -144,6 +144,17 @@ public class VideoController {
         return Result.success(Map.of("count", videoService.getFavoriteCount(videoId)));
     }
 
+    @PutMapping("/{videoId}")
+    @Operation(summary = "更新视频信息（仅作者可改）")
+    public Result updateVideo(
+            @PathVariable String videoId,
+            @RequestBody Map<String, String> body) {
+        String title = body.get("title");
+        String description = body.get("description");
+        Video video = videoService.updateVideo(videoId, title, description);
+        return Result.success(video, "更新成功");
+    }
+
     @DeleteMapping("/{videoId}")
     @Operation(summary = "删除视频（仅作者可删）")
     public Result deleteVideo(@PathVariable String videoId) {

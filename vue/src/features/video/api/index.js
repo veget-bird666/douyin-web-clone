@@ -27,6 +27,11 @@ export function recordView(videoId) {
   return request(`${VIDEO_PREFIX}/view/${videoId}`, { method: 'POST' })
 }
 
+/** 获取视频详情 */
+export function getVideoInfo(videoId) {
+  return request(`${VIDEO_PREFIX}/info/${videoId}`)
+}
+
 /** 获取视频播放地址 */
 export function getVideoUrl(videoId) {
   return request(`${VIDEO_PREFIX}/url/${videoId}`)
@@ -55,6 +60,24 @@ export function getFavorites() {
 /** 获取视频收藏数 */
 export function getFavoriteCount(videoId) {
   return request(`${VIDEO_PREFIX}/favorite-count/${videoId}`)
+}
+
+/** 获取指定用户的视频列表（按发布时间倒序） */
+export function getUserVideos(userId) {
+  return request(`${VIDEO_PREFIX}/user/${userId}`)
+}
+
+/** 更新视频信息（仅作者可改） */
+export function updateVideo(videoId, { title, description }) {
+  return request(`${VIDEO_PREFIX}/${videoId}`, {
+    method: 'PUT',
+    body: { title, description },
+  })
+}
+
+/** 删除视频（仅作者可删） */
+export function deleteVideo(videoId) {
+  return request(`${VIDEO_PREFIX}/${videoId}`, { method: 'DELETE' })
 }
 
 /** 上传视频（multipart/form-data） */

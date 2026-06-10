@@ -34,12 +34,14 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { Compass, Document } from '@element-plus/icons-vue'
+import { Compass, Document, Upload, VideoCamera } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
 const mainNav = [
   { label: '推荐', icon: Compass, path: '/home' },
+  { label: '发布视频', icon: Upload, path: '/upload' },
+  { label: '我的视频', icon: VideoCamera, path: '/my-videos' },
 ]
 
 function isActive(path) {
