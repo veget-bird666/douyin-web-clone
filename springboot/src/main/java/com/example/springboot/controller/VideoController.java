@@ -138,6 +138,12 @@ public class VideoController {
         return Result.success(videoService.getFavoriteList());
     }
 
+    @GetMapping("/likes")
+    @Operation(summary = "获取我的点赞列表")
+    public Result getLikes() {
+        return Result.success(videoService.getLikedList());
+    }
+
     @GetMapping("/favorite-count/{videoId}")
     @Operation(summary = "获取视频收藏数")
     public Result getFavoriteCount(@PathVariable String videoId) {

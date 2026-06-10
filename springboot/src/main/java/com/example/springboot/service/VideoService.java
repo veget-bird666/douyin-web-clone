@@ -271,6 +271,14 @@ public class VideoService {
     }
 
     /**
+     * 获取用户点赞列表
+     */
+    public List<Video> getLikedList() {
+        String userId = getCurrentUserId();
+        return likeRecordMapper.selectLikesByUserId(userId);
+    }
+
+    /**
      * 获取视频收藏数
      */
     public int getFavoriteCount(String videoId) {

@@ -29,6 +29,18 @@ const router = createRouter({
       meta: { title: '我的视频' },
       component: () => import('../views/MyVideosView.vue'),
     },
+    {
+      path: '/my-likes',
+      name: 'my-likes',
+      meta: { title: '我的点赞' },
+      component: () => import('../views/MyLikesView.vue'),
+    },
+    {
+      path: '/my-favorites',
+      name: 'my-favorites',
+      meta: { title: '我的收藏' },
+      component: () => import('../views/MyFavoritesView.vue'),
+    },
   ],
 })
 

@@ -26,6 +26,6 @@ public interface FavoriteRecordMapper {
     int countByVideoId(@Param("videoId") String videoId);
 
     @Select("SELECT v.* FROM video v INNER JOIN favorite_record f ON v.video_id = f.video_id " +
-            "WHERE f.user_id = #{userId} ORDER BY f.create_time DESC")
+            "WHERE f.user_id = #{userId} AND v.status = 1 ORDER BY f.create_time DESC")
     List<Video> selectFavoritesByUserId(@Param("userId") String userId);
 }

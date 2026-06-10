@@ -34,7 +34,7 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { Compass, Document, Upload, VideoCamera } from '@element-plus/icons-vue'
+import { CollectionTag, Compass, Document, Pointer, Upload, VideoCamera } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -42,6 +42,8 @@ const mainNav = [
   { label: '推荐', icon: Compass, path: '/home' },
   { label: '发布视频', icon: Upload, path: '/upload' },
   { label: '我的视频', icon: VideoCamera, path: '/my-videos' },
+  { label: '我的点赞', icon: Pointer, path: '/my-likes' },
+  { label: '我的收藏', icon: CollectionTag, path: '/my-favorites' },
 ]
 
 function isActive(path) {

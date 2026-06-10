@@ -57,6 +57,11 @@ export function getFavorites() {
   return request(`${VIDEO_PREFIX}/favorites`)
 }
 
+/** 获取当前用户点赞列表 */
+export function getLikes() {
+  return request(`${VIDEO_PREFIX}/likes`)
+}
+
 /** 获取视频收藏数 */
 export function getFavoriteCount(videoId) {
   return request(`${VIDEO_PREFIX}/favorite-count/${videoId}`)
