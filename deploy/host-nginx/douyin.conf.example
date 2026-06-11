@@ -1,0 +1,46 @@
+# 复制到宿主机 Nginx（与 pmail 共存）：
+#   sudo cp douyin.conf.example /etc/nginx/sites-available/douyin
+#   sudo ln -sf /etc/nginx/sites-available/douyin /etc/nginx/sites-enabled/douyin
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# 注意：删掉或改掉原来「主域名跳转到 pmail」的 default_server / return 301 配置。
+
+# 主站：抖音前端 + API
+server {
+    listen 80;
+    server_name xindudu.online www.xindudu.online;
+
+    client_max_body_size 500m;
+
+    location / {
+        proxy_pass http://127.0.0.1:18080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}
+
+# 视频直链（MinIO 预签名 URL 使用此域名）
+server {
+    listen 80;
+    server_name media.xindudu.online;
+
+    client_max_body_size 500m;
+
+    location / {
+        proxy_pass http://127.0.0.1:18080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 300s;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_buffering off;
+    }
+}

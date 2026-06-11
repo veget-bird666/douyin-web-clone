@@ -11,6 +11,8 @@ import io.minio.http.Method;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,10 @@ public class VideoService {
 
     @Resource
     private MinioClient minioClient;
+
+    @Autowired(required = false)
+    @Qualifier("publicMinioClient")
+    private MinioClient publicMinioClient;
 
     @Transactional(rollbackFor = Exception.class)
     public Video uploadVideo(MultipartFile file, String title, String description) {
@@ -156,7 +162,8 @@ public class VideoService {
             throw new CustomerException("404", "视频不存在");
         }
         try {
-            return minioClient.getPresignedObjectUrl(
+            MinioClient urlClient = publicMinioClient != null ? publicMinioClient : minioClient;
+            return urlClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(BUCKET_NAME)
                             .object(video.getObjectName())
